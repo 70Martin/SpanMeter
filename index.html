@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vytyčování bodů</title>
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="Aplikace pro rychlé výpočty násobků při vytyčování bodů">
+    
+    <!-- PWA manifest -->
+  <link rel="manifest" href="/manifest.json">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        /* Tmavý režim */
+        body.dark-mode {
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        }
+
+        body.dark-mode .container {
+            background: #1f2937;
+            color: #f3f4f6;
+        }
+
+        body.dark-mode .header {
+            background: linear-gradient(135deg, #374151, #1f2937);
+        }
+
+        body.dark-mode .input-group label {
+            color: #e5e7eb;
+        }
+
+        body.dark-mode input[type="number"] {
+            background: #374151;
+            border-color: #4b5563;
+            color: #f3f4f6;
+        }
+
+        body.dark-mode input[type="number"]:focus {
+            border-color: #60a5fa;
+            background: #4b5563;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+
+        body.dark-mode .unit-selector {
+            background: #374151;
+        }
+
+        body.dark-mode .unit-btn.active {
+            background: #3b82f6;
+        }
+
+        body.dark-mode .results {
+            background: #374151;
+            border-color: #4b5563;
+        }
+
+        body.dark-mode .results h3 {
+            color: #e5e7eb;
+        }
+
+        body.dark-mode .result-item {
+            background: #4b5563;
+            border-left-color: #60a5fa;
+        }
+
+        body.dark-mode .result-item:hover {
+            background: #6b7280;
+        }
+
+        body.dark-mode .result-number {
+            color: #e5e7eb;
+        }
+
+        body.dark-mode .cm-value {
+            color: #34d399;
+        }
+
+        body.dark-mode .m-value {
+            color: #f59e0b;
+        }
+
+        body.dark-mode .preset-btn {
+            background: #374151;
+            border-color: #4b5563;
+            color: #e5e7eb;
+        }
+
+        body.dark-mode .preset-btn:hover {
+            border-color: #60a5fa;
+            background: #4b5563;
+            color: #60a5fa;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 16px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .input-field {
+            flex: 1;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #2563eb;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .unit-selector {
+            display: flex;
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 4px;
+            margin-top: 8px;
+        }
+
+        .unit-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .unit-btn.active {
+            background: #2563eb;
+            color: white;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 25px;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .calculate-btn:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 25px;
+            margin-top: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .results h3 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .results-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 12px;
+            border-left: 4px solid #2563eb;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .result-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-number {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 18px;
+        }
+
+        .result-values {
+            display: flex;
+            gap: 15px;
+            font-size: 16px;
+        }
+
+        .cm-value {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .m-value {
+            color: #7c3aed;
+            font-weight: 600;
+        }
+
+        .presets {
+            margin-bottom: 25px;
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .preset-btn {
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .preset-btn:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .input-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Přepnout tmavý/světlý režim">
+                🌙
+            </button>
+            <h1>📏 Vytyčování bodů</h1>
+            <p>Rychlé výpočty násobků pro přesné měření</p>
+        </div>
+
+        <div class="content">
+            <div class="presets">
+                <label>Rychlé předvolby:</label>
+                <div class="preset-buttons">
+                    <button class="preset-btn" data-value="62.5">62,5 cm<br><small>Profily CW</small></button>
+                    <button class="preset-btn" data-value="90">90 cm<br><small>Hlavní profil max.90/15cm</small></button>
+                    <button class="preset-btn" data-value="80">80 cm<br><small>Závěs 30kg/m²</small></button>
+                    <button class="preset-btn" data-value="41.7">41.7 cm<br><small>Redukovaná rozteč</small></button>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-row">
+                    <div class="input-field">
+                        <label for="rozestup">Rozestup:</label>
+                        <input type="number" id="rozestup" value="0" step="0.1" min="0.1">
+                        <div class="unit-selector">
+                            <button type="button" class="unit-btn active" id="unit-cm">cm</button>
+                            <button type="button" class="unit-btn" id="unit-mm">mm</button>
+                        </div>
+                    </div>
+                    <div class="input-field">
+                        <label for="spara">Spára (mm):</label>
+                        <input type="number" id="spara" value="0" step="0.1" min="0" placeholder="např. 2">
+                    </div>
+                    <div class="input-field">
+                        <label for="maxDelka">Maximální délka:</label>
+                        <input type="number" id="maxDelka" value="10" step="0.1" min="0.1">
+                        <div class="unit-selector">
+                            <button type="button" class="unit-btn active" id="max-unit-m">m</button>
+                            <button type="button" class="unit-btn" id="max-unit-cm">cm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="calculate-btn" onclick="vypocitej()">
+                🔢 Vypočítaj rozměry
+            </button>
+
+            <div id="results" class="results hidden">
+                <h3>📐 Značky na metru:</h3>
+                <div id="results-grid" class="results-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tmavý režim
+        let isDarkMode = false;
+
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            updateTheme();
+        }
+
+        function updateTheme() {
+            const body = document.body;
+            const themeButton = document.querySelector('.theme-toggle');
+            
+            if (isDarkMode) {
+                body.classList.add('dark-mode');
+                themeButton.textContent = '☀️';
+                themeButton.title = 'Přepnout na světlý režim';
+            } else {
+                body.classList.remove('dark-mode');
+                themeButton.textContent = '🌙';
+                themeButton.title = 'Přepnout na tmavý režim';
+            }
+        }
+
+        // Registrace Service Worker pro PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('data:text/javascript;base64,Y29uc3QgQ0FDSEVfTkFNRSA9ICd2eXR5Y292YW5pLWJvZHUtdjEnOwpjb25zdCB1cmxzVG9DYWNoZSA9IFsKICAnLycKXTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcignaW5zdGFsbCcsIGZ1bmN0aW9uKGV2ZW50KSB7CiAgZXZlbnQud2FpdFVudGlsKAogICAgY2FjaGVzLm9wZW4oQ0FDSEVfTkFNRSkKICAgICAgLnRoZW4oZnVuY3Rpb24oY2FjaGUpIHsKICAgICAgICBjb25zb2xlLmxvZygnT3BlbmVkIGNhY2hlJyk7CiAgICAgICAgcmV0dXJuIGNhY2hlLmFkZEFsbCh1cmxzVG9DYWNoZSk7CiAgICAgIH0pCiAgKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoJ2ZldGNoJywgZnVuY3Rpb24oZXZlbnQpIHsKICBldmVudC5yZXNwb25kV2l0aCgKICAgIGNhY2hlcy5tYXRjaChldmVudC5yZXF1ZXN0KQogICAgICAudGhlbihmdW5jdGlvbihyZXNwb25zZSkgewogICAgICAgIGlmIChyZXNwb25zZSkgewogICAgICAgICAgcmV0dXJuIHJlc3BvbnNlOwogICAgICAgIH0KICAgICAgICByZXR1cm4gZmV0Y2goZXZlbnQucmVxdWVzdCk7CiAgICAgIH0pCiAgKTsKfSk7');
+            });
+        }
+
+        let rozestupUnit = 'cm';
+        let maxDelkaUnit = 'm';
+
+        // Event listenery pro přepínání jednotek
+        document.getElementById('unit-cm').addEventListener('click', () => setRozestupUnit('cm'));
+        document.getElementById('unit-mm').addEventListener('click', () => setRozestupUnit('mm'));
+        document.getElementById('max-unit-m').addEventListener('click', () => setMaxDelkaUnit('m'));
+        document.getElementById('max-unit-cm').addEventListener('click', () => setMaxDelkaUnit('cm'));
+
+        function setRozestupUnit(unit) {
+            rozestupUnit = unit;
+            document.querySelectorAll('#unit-cm, #unit-mm').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`unit-${unit}`).classList.add('active');
+        }
+
+        function setMaxDelkaUnit(unit) {
+            maxDelkaUnit = unit;
+            document.querySelectorAll('#max-unit-m, #max-unit-cm').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`max-unit-${unit}`).classList.add('active');
+        }
+
+        // Předvolby
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('rozestup').value = btn.dataset.value;
+                setRozestupUnit('cm');
+                vypocitej();
+            });
+        });
+
+        // Automatický výpočet při změně hodnot
+        document.getElementById('rozestup').addEventListener('input', vypocitej);
+        document.getElementById('spara').addEventListener('input', vypocitej);
+        document.getElementById('maxDelka').addEventListener('input', vypocitej);
+
+        function vypocitej() {
+            const rozestupValue = parseFloat(document.getElementById('rozestup').value);
+            const sparaValue = parseFloat(document.getElementById('spara').value) || 0;
+            const maxDelkaValue = parseFloat(document.getElementById('maxDelka').value);
+
+            if (!rozestupValue || !maxDelkaValue || rozestupValue <= 0 || maxDelkaValue <= 0) {
+                document.getElementById('results').classList.add('hidden');
+                return;
+            }
+
+            // Převod na cm pro výpočty
+            const rozestupCm = rozestupUnit === 'mm' ? rozestupValue / 10 : rozestupValue;
+            const sparaCm = sparaValue / 10; // spára je vždy v mm
+            const maxDelkaCm = maxDelkaUnit === 'm' ? maxDelkaValue * 100 : maxDelkaValue;
+
+            const nasobky = [];
+            let index = 1;
+
+            while (true) {
+                // Výpočet: (rozestup * počet) + (spára * počet)
+                const aktualniDelka = (rozestupCm * index) + (sparaCm * index);
+                
+                if (aktualniDelka > maxDelkaCm) {
+                    break;
+                }
+
+                nasobky.push({
+                    index: index,
+                    cm: aktualniDelka,
+                    m: aktualniDelka / 100
+                });
+                index++;
+            }
+
+            zobrazVysledky(nasobky);
+        }
+
+        function zobrazVysledky(nasobky) {
+            const resultsDiv = document.getElementById('results');
+            const gridDiv = document.getElementById('results-grid');
+
+            if (nasobky.length === 0) {
+                resultsDiv.classList.add('hidden');
+                return;
+            }
+
+            gridDiv.innerHTML = '';
+
+            nasobky.forEach(nasobek => {
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                
+                item.innerHTML = `
+                    <div class="result-number">${nasobek.index}.</div>
+                    <div class="result-values">
+                        <span class="cm-value">${nasobek.cm.toFixed(1)} cm</span>
+                        <span class="m-value">${nasobek.m.toFixed(3)} m</span>
+                    </div>
+                `;
+                
+                gridDiv.appendChild(item);
+            });
+
+            resultsDiv.classList.remove('hidden');
+        }
+
+        // Spuštění při načtení
+        window.addEventListener('load', function() {
+            updateTheme(); // Nastavit téma při načtení
+            vypocitej();
+        });
+    </script>
+</body>
+</html>
