@@ -1,70 +1,28 @@
-const CACHE_NAME = 'vytycovani-bodu-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+const CACHE_NAME = 'spanmeter-v1';
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json'
 ];
 
-// Instalace service workeru
-self.addEventListener('install', function(event) {
-  console.log('SW: Instalace');
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(function(cache) {
-        console.log('SW: Cache otevřen');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
   );
+  self.skipWaiting();
 });
 
-// Aktivace service workeru
-self.addEventListener('activate', function(event) {
-  console.log('SW: Aktivace');
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.map(function(cacheName) {
-          if (cacheName !== CACHE_NAME) {
-            console.log('SW: Mazání starého cache', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
   );
+  self.clients.claim();
 });
 
-// Fetch události - obsluha požadavků
-self.addEventListener('fetch', function(event) {
+self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(function(response) {
-        // Vrátit z cache pokud existuje
-        if (response) {
-          console.log('SW: Vráceno z cache:', event.request.url);
-          return response;
-        }
-
-        // Jinak fetchnout ze sítě
-        console.log('SW: Fetchování ze sítě:', event.request.url);
-        return fetch(event.request).then(function(response) {
-          // Zkontrolovat jestli je odpověď validní
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-
-          // Klonovat odpověď
-          var responseToCache = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then(function(cache) {
-              cache.put(event.request, responseToCache);
-            });
-
-          return response;
-        });
-      })
+    caches.match(event.request).then(cached => cached || fetch(event.request))
   );
 });
